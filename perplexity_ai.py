@@ -143,22 +143,57 @@ def handle_react_prompt(responses_str):
             None
         )
 
-        if not profil:
-            return {"error": "No suitable profile found."}
+        if profil:
+            # Eğer uygun bir profil bulunursa, profil üzerinden tahmin yap
+            konum = profil["suggestions"][0]  # İlk öneriyi seç
+            giris_tarihi, cikis_tarihi = tarih_hesapla(responses.get("stress"))
 
-        # Konum ve tarih bilgisi üret
-        konum = profil["suggestions"][0]  # İlk öneriyi seç
-        giris_tarihi, cikis_tarihi = tarih_hesapla(responses.get("stress"))
+            # Booking.com URL'si oluştur
+            booking_url = create_booking_url(konum, giris_tarihi, cikis_tarihi)
+
+            return {
+                "ai_response": f"Your vacation destination: {konum}, Dates: {giris_tarihi} - {cikis_tarihi}",
+                "booking_url": booking_url,
+            }
+        else:
+            # Eğer uygun bir profil bulunamazsa, tahmin yürüt
+            return tahmin_yurut(responses)
+
+    except Exception as e:
+        return {"error": str(e)}
+
+# Profil dışı tahmin yürütme
+def tahmin_yurut(responses):
+    try:
+        # Kullanıcının verdiği cevaplara göre öneri üret
+        comfort = responses.get("comfort", "a peaceful environment")
+        stress = responses.get("stress", "moderate stress")
+        vacation_type = responses.get("dream_vacation", "relaxing vacation")
+
+        # Tarih hesapla
+        giris_tarihi, cikis_tarihi = tarih_hesapla(stress)
+
+        # Yapay zeka yorumları
+        comment = f"Based on your preferences for {comfort} and a {vacation_type}, we recommend a destination that offers tranquility and excitement."
+        
+        # Önerilen konum (örnek bir tahmin için basit bir kural)
+        if "beach" in comfort.lower():
+            konum = "Bali"
+        elif "snow" in comfort.lower():
+            konum = "Swiss Alps"
+        else:
+            konum = "Kyoto"
 
         # Booking.com URL'si oluştur
         booking_url = create_booking_url(konum, giris_tarihi, cikis_tarihi)
 
         return {
-            "ai_response": f"Your vacation destination: {konum}, Dates: {giris_tarihi} - {cikis_tarihi}",
+            "ai_response": f"{comment} Suggested destination: {konum}, Dates: {giris_tarihi} - {cikis_tarihi}",
             "booking_url": booking_url,
         }
     except Exception as e:
         return {"error": str(e)}
+
 
 # OpenAI kullanımı
 def get_ai_response(user_prompt):

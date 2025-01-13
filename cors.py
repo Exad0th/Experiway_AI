@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from perplexity_ai import handle_react_prompt  # Yapay zeka fonksiyonunu içe aktar
 from booking_scraper import create_booking_url  # Booking URL oluşturma fonksiyonunu içe aktar
+from flying_gps_scraper import find_nearest_airport  # En yakın havalimanını bulma fonksiyonunu içe aktar
 
 app = Flask(__name__)
 CORS(app)  # Cross-Origin Resource Sharing'i etkinleştir
@@ -33,6 +34,18 @@ def handle_data():
     except Exception as e:
         print(f"Hata oluştu: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/nearest_airport', methods=['POST'])
+def get_nearest_airport():
+    data = request.json
+    if not data or "latitude" not in data or "longitude" not in data:
+        return jsonify({"error": "Konum bilgisi eksik"}), 400
+    
+    user_location = (data["latitude"], data["longitude"])
+    nearest_airport = find_nearest_airport(user_location)
+    
+    return jsonify({"nearest_airport": nearest_airport})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
